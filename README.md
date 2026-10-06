@@ -1,15 +1,101 @@
 # Athletiq
 
-Personal fitness & body metrics tracker. Enter your name, date of birth, gender, height and weight to see your age, BMI, BMI category and where you sit on the BMI scale. Works fully offline.
+Personal fitness & body metrics tracker for Android, built with Expo and React Native.
+
+Enter your name, date of birth, gender, height and weight, and Athletiq shows your **age**, **BMI**, **BMI category**, where you sit on the BMI scale, and a short health tip. Everything is calculated on the device, so the app works fully offline and stores no data.
+
+## Features
+
+- **Single-screen form** with name, date of birth (native Android date picker), gender, height (cm) and weight (kg)
+- **Inline validation**: errors show when you leave a field, clear as soon as the value is fixed, and wrong fields shake when you press *Calculate*
+- **Scroll to error**: the screen jumps to the first invalid field
+- **Results card** with BMI, age, a colour-coded category badge, a four-segment BMI scale with a marker, and height/weight summary
+- **Recalculate** hides the results but keeps your entries, so you can change a single value quickly
+- Accessible labels, roles and 48 dp minimum touch targets throughout
+- Responsive layout: height and weight stack on very small screens (< 360 dp wide)
+
+## BMI categories
+
+BMI = weight (kg) ÷ height (m)²
+
+| Category      | BMI range   |
+| ------------- | ----------- |
+| Underweight   | below 18.5  |
+| Normal weight | 18.5 – 24.9 |
+| Overweight    | 25 – 29.9   |
+| Obesity       | 30 and over |
+
+## Validation rules
+
+| Field         | Rule                                                        |
+| ------------- | ----------------------------------------------------------- |
+| Name          | Required, at least 2 characters, letters only (plus space, `.`, `'`, `-`) |
+| Date of birth | Required, not in the future, age 120 or under               |
+| Gender        | Required (Male / Female)                                    |
+| Height        | Required, 50 – 250 cm                                       |
+| Weight        | Required, 10 – 300 kg                                       |
+
+## Tech stack
+
+- [Expo SDK 57](https://docs.expo.dev/) with React Native 0.86 and React 19
+- [`@react-native-community/datetimepicker`](https://github.com/react-native-datetimepicker/datetimepicker) for the date picker
+- [`@expo/vector-icons`](https://docs.expo.dev/guides/icons/) (Material Community Icons)
+- `react-native-safe-area-context` for notch/status-bar insets
+- Plain JavaScript, ESLint with `eslint-config-expo`
+
+## Getting started
+
+Prerequisites: [Node.js](https://nodejs.org/) (LTS) and an Android emulator or device. Set up the emulator with the [Expo Android Studio guide](https://docs.expo.dev/workflow/android-studio-emulator/).
 
 ```bash
+git clone https://github.com/noumanh11/athletiq.git
+cd athletiq
 npm install
-npx expo start --android   # run on the Android emulator (Expo Go)
 ```
 
-- `App.js` – the home screen: form state, validation and calculation flow
-- `theme.js` – the Athletiq design system (colours, spacing, radius, type)
-- `fitness.js` – age, BMI, BMI categories and validation functions
-- `components/` – `BrandMark`, `InputField`, `GenderSelector`, `ResultCard`, `MetricCard`, `PressableScale`, `Icon`
+Run it in **Expo Go** (quickest):
 
-Icons come from `@expo/vector-icons` (Material Community Icons).
+```bash
+npx expo start --android
+```
+
+Or build and install a **development build** on the emulator/device:
+
+```bash
+npm run android      # expo run:android
+```
+
+## Scripts
+
+| Command           | What it does                                      |
+| ----------------- | ------------------------------------------------- |
+| `npm start`       | Start the Expo dev server                         |
+| `npm run android` | Generate the native project and run it on Android |
+| `npm run lint`    | Lint the project with ESLint                      |
+
+## Project structure
+
+```
+.
+├── index.js              # Entry point: registers App with Expo
+├── App.js                # Home screen: form state, validation and calculation flow
+├── fitness.js            # Pure helpers: age, BMI, BMI categories, input cleanup, validation
+├── theme.js              # Design tokens: colours, spacing, radius, type, touch size
+├── components/
+│   ├── BrandMark.js      # Logo tile + "Athletiq" wordmark
+│   ├── Icon.js           # Material Community Icons wrapper (decorative by default)
+│   ├── InputField.js     # Labelled text/date field with focus, error and shake states
+│   ├── GenderSelector.js # Two-option segmented control
+│   ├── PressableScale.js # Button that scales down on press
+│   ├── ResultCard.js     # Results: BMI, age, category badge, BMI scale, tip
+│   └── MetricCard.js     # Small stat tile used in the results card
+├── assets/images/        # App icon, adaptive icon layers, splash, favicon
+├── app.json              # Expo app config (name, Android package, icons, plugins)
+└── eslint.config.js      # ESLint flat config
+```
+
+The `android/` and `ios/` folders are generated by Expo ([Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/)) and are not committed. Change native settings in `app.json`, not in those folders.
+
+## License
+
+[MIT](LICENSE)
