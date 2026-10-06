@@ -10,28 +10,32 @@ Expo ships breaking changes every SDK release. APIs you remember are likely rena
 
 ## Commands
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+This project uses npm (`package-lock.json`).
 
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npx expo start              # start the dev server
 npx expo lint               # lint
-npx tsc --noEmit            # typecheck
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint before declaring any task done. The project is plain JavaScript (no TypeScript), so there is no typecheck step.
 
-## Navigation & Routing
+## Project structure
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+Athletiq is a single-screen app with no router. `index.js` registers `App.js` as the root component.
+
+- `App.js` — the only screen: form state, validation flow, results
+- `fitness.js` — pure helpers (age, BMI, categories, validation); no React here
+- `theme.js` — design tokens; import colours, spacing, radius and type from here instead of hard-coding values
+- `components/` — reusable UI components
+
+If more screens are added later, adopt **Expo Router** (routes in `src/app/`, imports from `expo-router`). Docs: https://docs.expo.dev/router/introduction.md
 
 ## Building with EAS
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
+Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `npx eas-cli@latest <command>`; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
 ## Rules
