@@ -3,7 +3,8 @@ import { Animated, StyleSheet, Text, useAnimatedValue, View } from 'react-native
 import Icon from './Icon';
 import MetricCard from './MetricCard';
 import PressableScale from './PressableScale';
-import { BMI_CATEGORIES } from '../fitness';
+import { BMI_CATEGORIES, cmToInches, formatMeasure, kgToPounds } from '../fitness';
+import HealthyWeightPlanner from './HealthyWeightPlanner';
 import { colors, radius, space, type, TOUCH } from '../theme';
 
 // Where the marker sits on the scale, as a percentage.
@@ -49,6 +50,12 @@ function BmiScale({ bmi, category }) {
 export default function ResultCard({ result, category, onRecalculate }) {
   const enter = useAnimatedValue(0);
   const bmi = Number(result.bmi);
+  const imperial = result.unitSystem === 'imperial';
+  const totalInches = Math.round(cmToInches(result.heightCm) * 10) / 10;
+  const heightValue = imperial
+    ? `${Math.floor(totalInches / 12)} ft ${formatMeasure(totalInches % 12)} in`
+    : formatMeasure(result.heightCm);
+  const weightValue = formatMeasure(imperial ? kgToPounds(result.weightKg) : result.weightKg);
 
   useEffect(() => {
     Animated.timing(enter, { toValue: 1, duration: 260, useNativeDriver: true }).start();
@@ -93,9 +100,11 @@ export default function ResultCard({ result, category, onRecalculate }) {
       </View>
 
       <View style={styles.metrics}>
-        <MetricCard icon="human-male-height" label="HEIGHT" value={result.height} unit="cm" />
-        <MetricCard icon="scale-bathroom" label="WEIGHT" value={result.weight} unit="kg" />
+        <MetricCard icon="human-male-height" label="HEIGHT" value={heightValue} unit={imperial ? '' : 'cm'} />
+        <MetricCard icon="scale-bathroom" label="WEIGHT" value={weightValue} unit={imperial ? 'lb' : 'kg'} />
       </View>
+
+      <HealthyWeightPlanner heightCm={result.heightCm} weightKg={result.weightKg} unitSystem={result.unitSystem} />
 
       <PressableScale
         style={styles.recalculate}

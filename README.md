@@ -11,6 +11,8 @@ Enter your name, date of birth, gender, height and weight, and Athletiq shows yo
 - **Scroll to error**: the screen jumps to the first invalid field
 - **Results card** with BMI, age, a colour-coded category badge, a four-segment BMI scale with a marker, and height/weight summary
 - **Recalculate** hides the results but keeps your entries, so you can change a single value quickly
+- **Metric / imperial switch** with live conversion between cm/kg and ft/in/lb, including unit-aware validation
+- **Weight explorer** in the results: step through another weight and see its projected BMI, category, and the adult BMI reference range for your height
 - Accessible labels, roles and 48 dp minimum touch targets throughout
 - Responsive layout: height and weight stack on very small screens (< 360 dp wide)
 
@@ -30,10 +32,10 @@ BMI = weight (kg) ÷ height (m)²
 | Field         | Rule                                                        |
 | ------------- | ----------------------------------------------------------- |
 | Name          | Required, at least 2 characters, letters only (plus space, `.`, `'`, `-`) |
-| Date of birth | Required, not in the future, age 120 or under               |
+| Date of birth | Required, not in the future, age 20–120 (adult BMI ranges)   |
 | Gender        | Required (Male / Female)                                    |
-| Height        | Required, 50 – 250 cm                                       |
-| Weight        | Required, 10 – 300 kg                                       |
+| Height        | Required, 50–250 cm (or the equivalent in feet/inches)      |
+| Weight        | Required, 10–300 kg (or the equivalent in pounds)           |
 
 ## Tech stack
 

@@ -5,6 +5,8 @@ export const colors = {
   background: '#F5F6F3', // very light warm neutral
   surface: '#FFFFFF', // cards and inputs
   ink: '#0E0F0C', // near-black: primary text, primary buttons
+  inkSurface: '#252720',
+  inkBorder: '#3C3E36',
   muted: '#6B6F66', // secondary text
   placeholder: '#9A9E94',
   border: '#E2E4DD', // subtle borders

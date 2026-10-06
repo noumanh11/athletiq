@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -10,9 +10,11 @@ import GenderSelector from './components/GenderSelector';
 import ResultCard from './components/ResultCard';
 import PressableScale from './components/PressableScale';
 import Icon from './components/Icon';
+import UnitToggle from './components/UnitToggle';
+import ImperialHeightField from './components/ImperialHeightField';
 import {
-  GENDER_OPTIONS, calculateAge, calculateBMI, formatDate, getBMICategory,
-  keepNumbersOnly, validateField, validateForm,
+  GENDER_OPTIONS, calculateAge, calculateBMI, cmToInches, formatDate, formatMeasure, getBMICategory,
+  inchesToCm, keepNumbersOnly, kgToPounds, poundsToKg, validateField, validateForm,
 } from './fitness';
 import { colors, radius, space, type, TOUCH } from './theme';
 
@@ -36,7 +38,9 @@ function HomeScreen() {
   const [dob, setDob] = useState(null); // a Date object, or null if not chosen
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
+  const [heightInches, setHeightInches] = useState('0');
   const [weight, setWeight] = useState('');
+  const [unitSystem, setUnitSystem] = useState('metric');
   const [errors, setErrors] = useState({});
   const [result, setResult] = useState(null); // null = hide the results card
   const [attempt, setAttempt] = useState(0); // counts Calculate presses (triggers the shake + replays the result animation)
@@ -64,7 +68,7 @@ function HomeScreen() {
 
   // Validate one field and store (or clear) its error message.
   function checkField(field, value) {
-    const message = validateField(field, value);
+    const message = validateField(field, value, unitSystem, heightInches);
     setErrors((previous) => ({ ...previous, [field]: message }));
   }
 
@@ -75,6 +79,33 @@ function HomeScreen() {
     setter(value);
     setResult(null);
     if (errors[field]) checkField(field, value);
+  }
+
+  function changeUnits(nextUnit) {
+    if (nextUnit === unitSystem) return;
+    const validHeight = !validateField('height', height, unitSystem, heightInches);
+    const validWeight = !validateField('weight', weight, unitSystem, heightInches);
+    if (nextUnit === 'imperial') {
+      const totalInches = cmToInches(Number(height));
+      if (validHeight) {
+        const roundedInches = Math.round(totalInches * 10) / 10;
+        setHeight(String(Math.floor(roundedInches / 12)));
+        setHeightInches(formatMeasure(roundedInches % 12));
+      } else {
+        setHeight('');
+        setHeightInches('0');
+      }
+      setWeight(validWeight ? formatMeasure(kgToPounds(Number(weight))) : '');
+    } else {
+      const feet = Number(height);
+      const inches = Number(heightInches);
+      setHeight(validHeight
+        ? formatMeasure(inchesToCm(feet * 12 + inches)) : '');
+      setWeight(validWeight ? formatMeasure(poundsToKg(Number(weight))) : '');
+    }
+    setUnitSystem(nextUnit);
+    setErrors({});
+    setResult(null);
   }
 
   function openDatePicker() {
@@ -92,7 +123,8 @@ function HomeScreen() {
   }
 
   function handleCalculate() {
-    const newErrors = validateForm({ name, dob, gender, height, weight });
+    Keyboard.dismiss();
+    const newErrors = validateForm({ name, dob, gender, height, weight }, unitSystem, heightInches);
     setErrors(newErrors);
     setAttempt((count) => count + 1);
 
@@ -100,23 +132,25 @@ function HomeScreen() {
       setResult(null);
       const fieldRefs = { name: nameRef, dob: dobRef, gender: genderRef, height: heightRef, weight: weightRef };
       const firstError = FIELD_ORDER.find((field) => newErrors[field]);
-      scrollToField(fieldRefs[firstError], 0);
+      scrollToField(fieldRefs[firstError], 250);
       return; // stop here, do not calculate
     }
 
-    const heightCm = Number(height);
-    const weightKg = Number(weight);
+    const heightCm = unitSystem === 'metric' ? Number(height) : inchesToCm(Number(height) * 12 + Number(heightInches));
+    const weightKg = unitSystem === 'metric' ? Number(weight) : poundsToKg(Number(weight));
     const bmi = calculateBMI(weightKg, heightCm);
 
     setResult({
       name: name.trim(),
       age: calculateAge(dob),
-      height: heightCm,
-      weight: weightKg,
+      heightCm,
+      weightKg,
+      unitSystem,
       bmi: bmi.toFixed(1),
+      bmiValue: bmi,
     });
     // Wait for the card to be drawn, then scroll down to it.
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 360);
   }
 
   // Hide the results but keep the entered values, so changing one metric is quick.
@@ -182,39 +216,62 @@ function HomeScreen() {
 
           <Text style={styles.section} accessibilityRole="header">BODY METRICS</Text>
 
-          <View style={[styles.metricsRow, stackMetrics && styles.metricsStacked]}>
-            <InputField
-              style={!stackMetrics && styles.metricField}
-              label="Height"
-              icon="human-male-height"
-              placeholder="175"
-              suffix="cm"
-              keyboardType="numeric"
-              value={height}
-              onChangeText={(text) => onEdit('height', keepNumbersOnly(text), setHeight)}
-              onBlur={() => checkField('height', height)}
-              onFocusField={scrollToField}
-              wrapperRef={heightRef}
-              error={errors.height}
-              valid={height !== '' && !validateField('height', height)}
-              showValid={false}
-              shakeKey={attempt}
-            />
+          <UnitToggle value={unitSystem} onChange={changeUnits} />
+
+          <View style={[styles.metricsRow, (stackMetrics || unitSystem === 'imperial') && styles.metricsStacked]}>
+            {unitSystem === 'metric' ? (
+              <InputField
+                style={!stackMetrics && styles.metricField}
+                label="Height"
+                icon="human-male-height"
+                placeholder="175"
+                suffix="cm"
+                keyboardType="decimal-pad"
+                value={height}
+                onChangeText={(text) => onEdit('height', keepNumbersOnly(text), setHeight)}
+                onBlur={() => checkField('height', height)}
+                onFocusField={scrollToField}
+                wrapperRef={heightRef}
+                error={errors.height}
+                valid={height !== '' && !validateField('height', height, unitSystem, heightInches)}
+                showValid={false}
+                shakeKey={attempt}
+              />
+            ) : (
+              <View style={!stackMetrics && styles.metricField}>
+                <ImperialHeightField
+                  feet={height}
+                  inches={heightInches}
+                  onFeetChange={(text) => onEdit('height', keepNumbersOnly(text), setHeight)}
+                  onInchesChange={(text) => {
+                    const next = keepNumbersOnly(text);
+                    setHeightInches(next);
+                    setResult(null);
+                    if (errors.height) setErrors((previous) => ({ ...previous, height: validateField('height', height, unitSystem, next) }));
+                  }}
+                  onBlur={() => checkField('height', height)}
+                  onFocusField={scrollToField}
+                  wrapperRef={heightRef}
+                  error={errors.height}
+                  shakeKey={attempt}
+                />
+              </View>
+            )}
 
             <InputField
-              style={!stackMetrics && styles.metricField}
+              style={!(stackMetrics || unitSystem === 'imperial') && styles.metricField}
               label="Weight"
               icon="scale-bathroom"
-              placeholder="70"
-              suffix="kg"
-              keyboardType="numeric"
+              placeholder={unitSystem === 'metric' ? '70' : '154'}
+              suffix={unitSystem === 'metric' ? 'kg' : 'lb'}
+              keyboardType="decimal-pad"
               value={weight}
               onChangeText={(text) => onEdit('weight', keepNumbersOnly(text), setWeight)}
               onBlur={() => checkField('weight', weight)}
               onFocusField={scrollToField}
               wrapperRef={weightRef}
               error={errors.weight}
-              valid={weight !== '' && !validateField('weight', weight)}
+              valid={weight !== '' && !validateField('weight', weight, unitSystem, heightInches)}
               showValid={false}
               shakeKey={attempt}
             />
@@ -237,7 +294,7 @@ function HomeScreen() {
             <ResultCard
               key={attempt}
               result={result}
-              category={getBMICategory(Number(result.bmi))}
+              category={getBMICategory(result.bmiValue)}
               onRecalculate={handleRecalculate}
             />
           )}
