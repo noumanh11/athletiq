@@ -9,7 +9,11 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# generated native folders (Continuous Native Generation: `npx expo prebuild` / `npx expo run:android`)
+/ios
+/android
+
+# Native signing keys and build leftovers
 .kotlin/
 *.orig.*
 *.jks
@@ -17,30 +21,35 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+*.pem
+*.apk
+*.aab
+*.ipa
 
 # Metro
 .metro-health-check*
 
-# debug
+# logs
+*.log
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
-.DS_Store
-*.pem
-
 # local env files
+.env
 .env*.local
 
-# typescript
-*.tsbuildinfo
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
 
-example
-
-# generated native folders
-/ios
-/android
-
-# IDE
+# IDE (shared .vscode/settings.json and .vscode/extensions.json stay tracked)
 .idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Claude Code: shared settings.json is tracked, personal overrides are not
+.claude/settings.local.json
