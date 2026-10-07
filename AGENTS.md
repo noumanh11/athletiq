@@ -18,7 +18,11 @@ npx expo start              # start the dev server
 npx expo lint               # lint
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
+npm run build:android       # release APK/AAB built inside Docker (docker/android, scripts/docker-android-build.ps1)
+npm run build:android:install  # Docker build, then adb install + launch on the emulator
 ```
+
+Java is blocked on the development host, so do not run Gradle locally; Android builds go through the Docker pipeline. Its toolchain versions (JDK, SDK, build-tools, NDK, CMake) are pinned in `docker/android/Dockerfile` and must match `node_modules/react-native/gradle/libs.versions.toml` after SDK upgrades.
 
 Run lint before declaring any task done. The project is plain JavaScript (no TypeScript), so there is no typecheck step.
 
