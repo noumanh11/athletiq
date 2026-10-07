@@ -24,14 +24,19 @@ Run lint before declaring any task done. The project is plain JavaScript (no Typ
 
 ## Project structure
 
-Athletiq is a single-screen app with no router. `index.js` registers `App.js` as the root component.
+Athletiq uses **Expo Router** (`"main": "expo-router/entry"`). Docs: https://docs.expo.dev/router/introduction.md
 
-- `App.js` — the only screen: form state, validation flow, results
-- `fitness.js` — pure helpers (age, BMI, categories, validation); no React here
-- `theme.js` — design tokens; import colours, spacing, radius and type from here instead of hard-coding values
-- `components/` — reusable UI components
+- `src/app/` - routes only. Each route file re-exports a screen; `_layout.js` holds the providers and the stack, `(tabs)/_layout.js` the bottom tabs
+- `screens/` - screen components (Home, Progress, Workouts, Profile, ProfileEdit, Settings, WorkoutDetail, MeasurementHistory)
+- `sheets/` - quick-action bottom sheets, opened from anywhere with `useSheet()('weight' | 'workout' | 'measurement' | 'activity' | 'goal')`
+- `components/` - reusable UI; use `Icon.js` for every icon and `PressableScale`/`Button` for pressables
+- `AthletiqContext.js` - app state (Context + `useReducer`) and persistence; screens call `useAthletiq()`
+- `storage.js` - the only file that touches AsyncStorage (one JSON object under one key)
+- `fitness.js` - pure helpers (age, BMI, categories, units, dates, stats, validation); no React here
+- `motion.js` - `useReducedMotion` and the shared `useEntrance` animation
+- `theme.js` - design tokens; import colours, spacing, radius, type, icon sizes and durations from here instead of hard-coding values
 
-If more screens are added later, adopt **Expo Router** (routes in `src/app/`, imports from `expo-router`). Docs: https://docs.expo.dev/router/introduction.md
+Data rules: store weights in kg, lengths in cm and dates as `YYYY-MM-DD`; convert only for display. Do not use em dashes in UI copy.
 
 ## Building with EAS
 

@@ -18,6 +18,7 @@ export default function PressableScale({ children, style, wrapperStyle, onPress,
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: Boolean(disabled) }}
     >
       <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
     </Pressable>

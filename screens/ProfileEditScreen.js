@@ -1,46 +1,62 @@
 import { useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
 
-import BrandMark from './components/BrandMark';
-import InputField from './components/InputField';
-import GenderSelector from './components/GenderSelector';
-import ResultCard from './components/ResultCard';
-import PressableScale from './components/PressableScale';
-import Icon from './components/Icon';
-import UnitToggle from './components/UnitToggle';
-import ImperialHeightField from './components/ImperialHeightField';
+import { useAthletiq } from '../AthletiqContext';
+import BrandMark from '../components/BrandMark';
+import Button from '../components/Button';
+import InputField from '../components/InputField';
+import GenderSelector from '../components/GenderSelector';
+import ResultCard from '../components/ResultCard';
+import Icon from '../components/Icon';
+import UnitToggle from '../components/UnitToggle';
+import ImperialHeightField from '../components/ImperialHeightField';
+import { useToast } from '../components/Toast';
 import {
   GENDER_OPTIONS, calculateAge, calculateBMI, cmToInches, formatDate, formatMeasure, getBMICategory,
-  inchesToCm, keepNumbersOnly, kgToPounds, poundsToKg, validateField, validateForm,
-} from './fitness';
-import { colors, radius, space, type, TOUCH } from './theme';
+  inchesToCm, keepNumbersOnly, kgToPounds, parseISODate, poundsToKg, toISODate, validateField, validateForm,
+} from '../fitness';
+import { colors, iconSize, radius, space, type, TOUCH } from '../theme';
 
 const FIELD_ORDER = ['name', 'dob', 'gender', 'height', 'weight'];
 
-export default function App() {
-  return (
-    <SafeAreaProvider>
-      <HomeScreen />
-    </SafeAreaProvider>
-  );
+// Saved profile (kg/cm) -> the text values the form shows in the chosen units.
+function toFormValues(profile, unitSystem) {
+  if (!profile) return { height: '', heightInches: '0', weight: '' };
+  if (unitSystem === 'imperial') {
+    const roundedInches = Math.round(cmToInches(profile.heightCm) * 10) / 10;
+    return {
+      height: String(Math.floor(roundedInches / 12)),
+      heightInches: formatMeasure(roundedInches % 12),
+      weight: formatMeasure(kgToPounds(profile.weightKg)),
+    };
+  }
+  return { height: formatMeasure(profile.heightCm), heightInches: '0', weight: formatMeasure(profile.weightKg) };
 }
 
-function HomeScreen() {
+// The original Athletiq calculator, now also the profile editor.
+// Calculate validates the form, saves the profile, and shows the results card.
+export default function ProfileEditScreen() {
+  const { profile, settings, actions } = useAthletiq();
+  const router = useRouter();
+  const toast = useToast();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const stackMetrics = width < 360; // very small phones: height/weight one under the other
+  const isSetup = !profile;
 
-  // Form state
-  const [name, setName] = useState('');
-  const [dob, setDob] = useState(null); // a Date object, or null if not chosen
-  const [gender, setGender] = useState('');
-  const [height, setHeight] = useState('');
-  const [heightInches, setHeightInches] = useState('0');
-  const [weight, setWeight] = useState('');
-  const [unitSystem, setUnitSystem] = useState('metric');
+  // Form state, pre-filled from the saved profile
+  const initial = toFormValues(profile, settings.unitSystem);
+  const [name, setName] = useState(profile?.name || '');
+  const [dob, setDob] = useState(profile ? parseISODate(profile.dateOfBirth) : null); // a Date object, or null if not chosen
+  const [gender, setGender] = useState(profile?.gender || '');
+  const [height, setHeight] = useState(initial.height);
+  const [heightInches, setHeightInches] = useState(initial.heightInches);
+  const [weight, setWeight] = useState(initial.weight);
+  const [unitSystem, setUnitSystem] = useState(settings.unitSystem);
   const [errors, setErrors] = useState({});
   const [result, setResult] = useState(null); // null = hide the results card
   const [attempt, setAttempt] = useState(0); // counts Calculate presses (triggers the shake + replays the result animation)
@@ -104,6 +120,7 @@ function HomeScreen() {
       setWeight(validWeight ? formatMeasure(poundsToKg(Number(weight))) : '');
     }
     setUnitSystem(nextUnit);
+    actions.setUnits(nextUnit); // the unit choice is an app-wide preference
     setErrors({});
     setResult(null);
   }
@@ -140,6 +157,15 @@ function HomeScreen() {
     const weightKg = unitSystem === 'metric' ? Number(weight) : poundsToKg(Number(weight));
     const bmi = calculateBMI(weightKg, heightCm);
 
+    actions.saveProfile({
+      name: name.trim(),
+      dateOfBirth: toISODate(dob),
+      gender,
+      heightCm: Math.round(heightCm * 10) / 10,
+      weightKg: Math.round(weightKg * 10) / 10,
+    });
+    toast(isSetup ? 'Profile created' : 'Profile saved');
+
     setResult({
       name: name.trim(),
       age: calculateAge(dob),
@@ -160,6 +186,11 @@ function HomeScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }
 
+  function goBack() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  }
+
   return (
     <KeyboardAvoidingView style={styles.screen} behavior="padding">
       <StatusBar style="dark" />
@@ -170,9 +201,19 @@ function HomeScreen() {
         keyboardDismissMode="on-drag"
       >
         <View ref={contentRef} collapsable={false} style={styles.content}>
-          <BrandMark />
+          <View style={styles.topRow}>
+            <Pressable onPress={goBack} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => [styles.back, pressed && styles.backPressed]}>
+              <Icon name="arrow-left" size={iconSize.lg} color={colors.ink} />
+            </Pressable>
+            <BrandMark />
+          </View>
 
-          <Text style={styles.title}>Your body.{'\n'}Your numbers. Your progress.</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            {isSetup ? <>Your body.{'\n'}Your numbers. Your progress.</> : 'Edit profile'}
+          </Text>
+          {!isSetup ? (
+            <Text style={styles.subtitle}>A new weight here is also saved as today&apos;s weigh-in.</Text>
+          ) : null}
 
           <Text style={styles.section} accessibilityRole="header">PERSONAL DETAILS</Text>
 
@@ -277,26 +318,25 @@ function HomeScreen() {
             />
           </View>
 
-          <PressableScale
-            style={styles.primaryButton}
+          <Button
+            label="Calculate My Metrics"
+            icon="arrow-right"
             onPress={handleCalculate}
-            accessibilityLabel="Calculate my metrics"
-            accessibilityHint="Calculates your age and BMI"
-          >
-            <Text style={styles.primaryButtonText}>Calculate My Metrics</Text>
-            <View style={styles.primaryButtonIcon}>
-              <Icon name="arrow-right" size={20} color={colors.ink} />
-            </View>
-          </PressableScale>
+            accessibilityHint="Saves your profile and calculates your age and BMI"
+            style={styles.primaryButton}
+          />
 
           {/* Only drawn when there is a result. `key` replays the entrance animation on every calculation. */}
           {result && (
-            <ResultCard
-              key={attempt}
-              result={result}
-              category={getBMICategory(result.bmiValue)}
-              onRecalculate={handleRecalculate}
-            />
+            <>
+              <ResultCard
+                key={attempt}
+                result={result}
+                category={getBMICategory(result.bmiValue)}
+                onRecalculate={handleRecalculate}
+              />
+              <Button label="Go to dashboard" icon="home" onPress={() => router.dismissTo('/')} style={styles.done} />
+            </>
           )}
         </View>
       </ScrollView>
@@ -311,7 +351,12 @@ const styles = StyleSheet.create({
   statusBarBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: colors.background },
   content: { paddingHorizontal: space.xl },
 
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  back: { width: TOUCH, height: TOUCH, marginLeft: -space.sm, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  backPressed: { backgroundColor: colors.track },
+
   title: { ...type.title, color: colors.ink, marginTop: space.xxxl },
+  subtitle: { ...type.body, color: colors.muted, marginTop: space.xs },
 
   section: { ...type.section, color: colors.muted, marginTop: space.xxxl, marginBottom: space.md },
 
@@ -319,24 +364,6 @@ const styles = StyleSheet.create({
   metricsStacked: { flexDirection: 'column', gap: 0 },
   metricField: { flex: 1 },
 
-  primaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: TOUCH + space.sm,
-    marginTop: space.lg,
-    paddingLeft: space.xxl,
-    paddingRight: space.sm,
-    backgroundColor: colors.ink,
-    borderRadius: radius.md,
-  },
-  primaryButtonText: { ...type.button, color: colors.surface },
-  primaryButtonIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  primaryButton: { marginTop: space.lg },
+  done: { marginTop: space.md },
 });

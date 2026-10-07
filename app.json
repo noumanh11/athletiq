@@ -2,6 +2,7 @@
   "expo": {
     "name": "Athletiq",
     "slug": "athletiq",
+    "scheme": "athletiq",
     "description": "Personal fitness & body metrics tracker",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -32,7 +33,9 @@
           "backgroundColor": "#0E0F0C"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-router",
+      "expo-sharing"
     ]
   }
 }

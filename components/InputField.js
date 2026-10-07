@@ -11,7 +11,7 @@ import { colors, radius, space, type } from '../theme';
 export default function InputField({
   label, icon, error, valid, showValid = true, shakeKey, wrapperRef, style,
   value, onChangeText, onBlur, placeholder, keyboardType, suffix, onFocusField,
-  onPress, displayText,
+  onPress, displayText, maxLength,
 }) {
   const [focused, setFocused] = useState(false);
   const inputRef = useRef(null);
@@ -72,6 +72,7 @@ export default function InputField({
                   placeholder={placeholder}
                   placeholderTextColor={colors.placeholder}
                   keyboardType={keyboardType}
+                  maxLength={maxLength}
                   value={value}
                   onChangeText={onChangeText}
                   accessibilityLabel={label}

@@ -58,8 +58,8 @@ export default function HealthyWeightPlanner({ heightCm, weightKg, unitSystem })
       <Text style={styles.intro}>See how a different weight would change your BMI at your current height.</Text>
 
       <View style={styles.rangeCard}>
-        <Text style={styles.rangeLabel}>ADULT BMI REFERENCE · 18.5–24.9</Text>
-        <Text style={styles.rangeValue}>About {formatMeasure(lower)}–{formatMeasure(upper)} {unit}</Text>
+        <Text style={styles.rangeLabel}>ADULT BMI REFERENCE · 18.5 TO 24.9</Text>
+        <Text style={styles.rangeValue}>About {formatMeasure(lower)} to {formatMeasure(upper)} {unit}</Text>
         <Text style={styles.rangeCaption}>Approximate weight range at your height</Text>
       </View>
 
