@@ -27,7 +27,10 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:android": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker-android-build.ps1",
+    "build:android:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker-android-build.ps1 -Yes -Install",
+    "build:android:shell": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker-android-build.ps1 -Shell"
   },
   "private": true,
   "devDependencies": {
